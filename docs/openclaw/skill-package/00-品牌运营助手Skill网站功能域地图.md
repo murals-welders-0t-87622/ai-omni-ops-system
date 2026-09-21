@@ -36,9 +36,10 @@
 - 品牌增长报告
 - 半年营销规划
 - 营销日历
+- 爆款拆解
 - 选题库
 - 统一素材库
-- OpenClaw 的营销策划方案、每日计划、每周复盘、策略优化记录、创作素材、视频作品
+- OpenClaw 的营销策划方案、每日计划、每周复盘、策略优化记录、爆款拆解、创作素材、视频作品
 
 当前优先 MCP：
 
@@ -50,6 +51,9 @@
 - `get_brand_growth_marketing_calendar_workspace`
 - `generate_brand_growth_marketing_calendar`
 - `update_brand_growth_marketing_calendar`
+- `get_openclaw_explosive_analyses`
+- `create_openclaw_explosive_analysis`
+- `delete_openclaw_explosive_analysis`
 - `get_brand_growth_topic_library_workspace`
 - `generate_brand_growth_topic_candidates`
 - `update_brand_growth_topic_library`
@@ -88,8 +92,14 @@
 
 - 可视化报告：`get_brand_growth_visual_report_workspace`、`generate_brand_growth_visual_report`
 - 营销日历：`get_brand_growth_marketing_calendar_workspace`、`generate_brand_growth_marketing_calendar`、`update_brand_growth_marketing_calendar`
+- 爆款拆解：`get_openclaw_explosive_analyses`、`create_openclaw_explosive_analysis`、`delete_openclaw_explosive_analysis`
 - 选题库：`get_brand_growth_topic_library_workspace`、`generate_brand_growth_topic_candidates`、`update_brand_growth_topic_library`、`create_brand_growth_topic_library_item`、`update_brand_growth_topic_library_item`、`delete_brand_growth_topic_library_item`
 - 素材库：`get_brand_growth_material_library_items`
+
+补充约束：
+
+- `爆款拆解` 位于品牌增长报告的 `营销日历` 下、`选题库` 上，属于 OpenClaw 独立 HTML 真源，不并入 `DOUYIN_TOPIC_LIBRARY`
+- `选题库` 当前新增 `matchedExplosiveTemplateHtmls`，用于沉淀多个爆款拆解 HTML 模板；OpenClaw 做单条写入时应一并维护该字段
 
 抖音采集补充：
 

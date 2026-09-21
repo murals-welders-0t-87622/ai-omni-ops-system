@@ -305,7 +305,7 @@
   - 用途：OpenClaw 内容详情下的统一留言真源
   - 关键字段：`workspaceScope`、`resourceType`、`resourceId`、`content`、`createdAt`、`updatedAt`
   - 当前约定：
-    - 当前承接 `creative_material / daily_plan / lobster_diary / strategy_optimization / marketing_plan / video_work` 六类资源留言
+    - 当前承接 `creative_material / daily_plan / lobster_diary / strategy_optimization / marketing_plan / explosive_analysis / video_work` 七类资源留言
     - 页面端默认按内容详情弹窗读取，不单独暴露独立列表页
 - `OpenClawMarketingPlan`
   - 用途：内容获客三板块共用的营销策划方案真源，承接 OpenClaw 上传的 HTML 方案
@@ -320,6 +320,13 @@
   - 当前约定：
     - 页面端支持查看、编辑、留言与删除
     - 当前已纳入 `prisma/schema.prisma`，避免标准 Docker 运行态的 `db-init -> prisma db push` 误判删表
+- `OpenClawExplosiveAnalysis`
+  - 用途：品牌增长报告下 `爆款拆解` 板块的独立 HTML 真源
+  - 关键字段：`workspaceScope`、`title`、`tagsText`、`htmlContent`、`authorName`、`workUrl`、`videoCopy`、`createdAt`、`updatedAt`
+  - 当前约定：
+    - 默认固定用于 `brand_growth` 工作区
+    - 页面端支持列表查看、HTML 详情预览、删除与留言
+    - 选题库若要引用爆款模板，继续通过 `DOUYIN_TOPIC_LIBRARY.items[].matchedExplosiveTemplateHtmls` 关联，不做外键耦合
 - `OpenClawCommentLead`
   - 用途：全网获客工作台中 `评论获客` 板块的持久化真源
   - 关键字段：`workspaceScope`、`sourcePlatform`、`sourceUrl`、`sourceCommentId`、`userName`、`userComment`、`selectedReason`、`userProfileUrl`
@@ -479,6 +486,7 @@
 - 营销策划方案 / 热点找选题 / 选题库
   - 上游读取：`Brand`、`Product`、`PlatformAccount`、`CompetitorAccount`、`BusinessAsset`
   - 生成结果：`Task`、`BusinessAsset`
+  - `DOUYIN_TOPIC_LIBRARY` 当前仍继续走 `BusinessAsset.metadataJson`，但单条选题已新增 `matchedExplosiveTemplateHtmls?: string[]` 用于沉淀多个爆款拆解 HTML 模板
 - 素材库 / 数据采集联动
   - 采集主表：`BusinessAsset`
   - 当前抖音采集结果、素材库沉淀和视频缓存状态统一通过 `BusinessAsset.metadataJson` 承载结构化字段

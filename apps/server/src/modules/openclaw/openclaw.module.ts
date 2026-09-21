@@ -15,6 +15,8 @@ import { OpenClawCommentLeadService } from "./openclaw-comment-lead.service";
 import { OpenClawPlatformLeadController } from "./openclaw-platform-lead.controller";
 import { OpenClawPlatformLeadService } from "./openclaw-platform-lead.service";
 import { OpenClawCommentService } from "./openclaw-comment.service";
+import { OpenClawExplosiveAnalysisController } from "./openclaw-explosive-analysis.controller";
+import { OpenClawExplosiveAnalysisService } from "./openclaw-explosive-analysis.service";
 import { OpenClawCreativeMaterialController } from "./openclaw-creative-material.controller";
 import { OpenClawCreativeMaterialService } from "./openclaw-creative-material.service";
 import { OpenClawGeoContentController } from "./openclaw-geo-content.controller";
@@ -53,6 +55,7 @@ import { SchedulerModule } from "../scheduler/scheduler.module";
     OpenClawCommentController,
     OpenClawCommentLeadController,
     OpenClawPlatformLeadController,
+    OpenClawExplosiveAnalysisController,
     OpenClawInstallationController,
     OpenClawGeoVisibilityReportController,
     OpenClawGeoContentController,
@@ -71,6 +74,7 @@ import { SchedulerModule } from "../scheduler/scheduler.module";
     OpenClawCommentService,
     OpenClawCommentLeadService,
     OpenClawPlatformLeadService,
+    OpenClawExplosiveAnalysisService,
     OpenClawInstallationService,
     OpenClawGeoVisibilityReportService,
     OpenClawGeoContentService,
@@ -89,6 +93,7 @@ import { SchedulerModule } from "../scheduler/scheduler.module";
     OpenClawCommentService,
     OpenClawCommentLeadService,
     OpenClawPlatformLeadService,
+    OpenClawExplosiveAnalysisService,
     OpenClawInstallationService,
     OpenClawGeoVisibilityReportService,
     OpenClawGeoContentService,

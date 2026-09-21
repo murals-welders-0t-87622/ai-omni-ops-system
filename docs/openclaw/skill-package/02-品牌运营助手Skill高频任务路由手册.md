@@ -194,6 +194,9 @@
 - `get_brand_growth_marketing_calendar_workspace`
 - `generate_brand_growth_marketing_calendar`
 - `update_brand_growth_marketing_calendar`
+- `get_openclaw_explosive_analyses`
+- `create_openclaw_explosive_analysis`
+- `delete_openclaw_explosive_analysis`
 - `get_brand_growth_topic_library_workspace`
 - `generate_brand_growth_topic_candidates`
 - `update_brand_growth_topic_library`
@@ -204,6 +207,7 @@
 - 用户只说“做营销方案 / 营销规划 / 报告”时，优先让 `manage_growth_reports` 先做统一编排
 - 用户明确只要某一份单体产物时，再走专用创建工具
 - 用户明确提到“品牌增长可视化报告 / 营销日历 / 选题库 / 素材库”时，优先走对应的品牌增长语义别名工具，不再混用 `xiaohongshu_*` 或 `douyin_*` 命名
+- 用户明确提到“爆款拆解 / 爆款模板 / HTML 拆解”时，优先走 `get_openclaw_explosive_analyses`、`create_openclaw_explosive_analysis`、`delete_openclaw_explosive_analysis`
 - 用户明确提到“内容获客某书 / 某音/某号 / 公众号的营销日历”时，也继续走这组品牌增长语义别名工具；只是回填或解读时按平台裁剪字段，不要把其它平台块一起覆盖
 - 当前营销日历已经去掉技能中心依赖，不要再引导用户去技能中心查找营销日历 skillId 或修改营销日历 skill / prompt；OpenClaw 直接走 `manage_growth_reports` 即可
 - 当 OpenClaw 已经自己生成好每日营销选题时：
@@ -222,6 +226,7 @@
 - 内容获客页面已去掉“生成营销日历”按钮；当用户要写营销日历时，不再让他回页面点按钮，逐天补写时直接在对话里产出 `payload.item` 并提交
 - `manage_growth_reports` 当前兼容内容获客营销日历别名 action，例如 `generate_douyin_marketing_calendar`、`update_douyin_marketing_calendar`、`upsert_douyin_marketing_calendar_item`、`generate_wechat_marketing_calendar`
 - 选题库支持人工与 OpenClaw 共用同一份结构化记录；OpenClaw 侧优先用 `create_brand_growth_topic_library_item`、`update_brand_growth_topic_library_item`、`delete_brand_growth_topic_library_item` 做单条增删改
+- 当用户要把爆款拆解模板挂回某条选题时，继续走 `create_brand_growth_topic_library_item` 或 `update_brand_growth_topic_library_item`，并把 HTML 数组写入 `matchedExplosiveTemplateHtmls`
 
 ### 3.8 看和同步采集数据
 
@@ -490,6 +495,7 @@ RunningHub 关键规则：
 典型问法：
 
 - 帮我写每日计划/每周复盘
+- 帮我提交一条爆款拆解
 - 帮我生成音乐并保存素材
 - 帮我把结果存进创作素材
 - 帮我把最终视频保存到视频作品
@@ -505,6 +511,11 @@ RunningHub 关键规则：
   - `get_openclaw_marketing_plans`
   - `create_openclaw_marketing_plan`
   - `delete_openclaw_marketing_plan`
+- 爆款拆解：
+  - `get_openclaw_explosive_analyses`
+  - `create_openclaw_explosive_analysis`
+  - `delete_openclaw_explosive_analysis`
+  - 当前固定用于 `品牌增长报告 -> 爆款拆解`
 - 策略优化记录：
   - `get_openclaw_strategy_optimizations`
   - `create_openclaw_strategy_optimization`
@@ -532,6 +543,7 @@ RunningHub 关键规则：
 
 - OpenClaw 的创作素材、视频作品、GEO获客内容、全网获客评论名单都是归档板块，不是生成引擎本身
 - OpenClaw 的营销策划方案当前是 HTML 归档板块；优先先读列表，再决定是否新建或删除
+- 爆款拆解也是 HTML 归档板块；如果还要把某条 HTML 模板绑定到选题库，需要再调用品牌增长选题库单条更新工具，把内容写进 `matchedExplosiveTemplateHtmls`
 - 策略优化记录不用于 GEO 关键词挖掘、网站诊断、知识库搭建、GEO优化方案
 - 音乐任务创建成功不代表最终完成，必须继续轮询结果
 - 当用户要求“生成后直接沉淀到素材库”时，优先把归档动作一并完成

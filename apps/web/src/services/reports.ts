@@ -289,6 +289,7 @@ export type DouyinTopicLibraryItem = {
   topicDescription?: string;
   source?: "GENERATED" | "MANUAL" | "OPENCLAW";
   sourceDate?: string;
+  matchedExplosiveTemplateHtmls?: string[];
 };
 
 export type DouyinOriginalCopyType =

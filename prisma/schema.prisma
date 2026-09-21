@@ -1107,6 +1107,25 @@ model OpenClawMarketingPlan {
   @@map("OpenClawMarketingPlan")
 }
 
+model OpenClawExplosiveAnalysis {
+  id              String   @id
+  brandId         String
+  workspaceScope  String   @default("brand_growth")
+  createdByUserId String
+  title           String   @default("")
+  tagsText        String   @default("")
+  htmlContent     String   @default("")
+  authorName      String   @default("")
+  workUrl         String   @default("")
+  videoCopy       String   @default("")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([brandId, createdAt(sort: Desc), updatedAt(sort: Desc)], map: "OpenClawExplosiveAnalysis_brand_created_idx")
+  @@index([brandId, workspaceScope, createdAt(sort: Desc), updatedAt(sort: Desc)], map: "OpenClawExplosiveAnalysis_brand_scope_created_idx")
+  @@map("OpenClawExplosiveAnalysis")
+}
+
 model OpenClawStrategyOptimization {
   id              String   @id
   brandId         String

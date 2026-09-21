@@ -50,6 +50,7 @@ type TopicFormDraft = {
   selectedAt: string;
   source?: DouyinTopicLibraryItem["source"];
   sourceDate?: string;
+  matchedExplosiveTemplateHtmlsText: string;
 };
 
 const TOPIC_PLATFORM_OPTIONS: Array<DouyinTopicLibraryItem["topicPlatform"]> = ["抖音", "视频号", "小红书", "公众号"];
@@ -113,6 +114,9 @@ function createTopicFormDraft(item?: DouyinTopicLibraryItem): TopicFormDraft {
     selectedAt: item?.selectedAt || new Date().toISOString(),
     source: item?.source,
     sourceDate: item?.sourceDate,
+    matchedExplosiveTemplateHtmlsText: Array.isArray(item?.matchedExplosiveTemplateHtmls)
+      ? item?.matchedExplosiveTemplateHtmls.join("\n\n")
+      : "",
   };
 }
 
@@ -186,6 +190,11 @@ export function DouyinTopicLibraryWorkspace(props: DouyinTopicLibraryWorkspacePr
       window.alert("已开启复用时，请填写复用周期。");
       return;
     }
+    const matchedExplosiveTemplateHtmls = draft.matchedExplosiveTemplateHtmlsText
+      .split(/\n{2,}/)
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .slice(0, 20);
     await props.onSaveTopic({
       id: draft.id,
       topicTitle,
@@ -204,6 +213,7 @@ export function DouyinTopicLibraryWorkspace(props: DouyinTopicLibraryWorkspacePr
         || undefined,
       source: editorMode === "create" ? "MANUAL" : draft.source || "MANUAL",
       sourceDate: draft.sourceDate,
+      matchedExplosiveTemplateHtmls: matchedExplosiveTemplateHtmls.length ? matchedExplosiveTemplateHtmls : undefined,
     });
     closeEditor();
   }
@@ -467,6 +477,23 @@ export function DouyinTopicLibraryWorkspace(props: DouyinTopicLibraryWorkspacePr
               />
             </label>
             <label style={{ display: "grid", gap: 6 }}>
+              <span className="status-text">匹配爆款模板（支持多个 HTML）</span>
+              <textarea
+                value={draft.matchedExplosiveTemplateHtmlsText}
+                onChange={(event) => updateDraft("matchedExplosiveTemplateHtmlsText", event.target.value)}
+                placeholder={"每段 HTML 之间请空一行分隔\n例如：<article>...</article>\n\n<section>...</section>"}
+                rows={6}
+                disabled={props.isSaving || editorMode === "view"}
+              />
+              <span className="panel-subtext">当前解析数量：{
+                draft.matchedExplosiveTemplateHtmlsText
+                  .split(/\n{2,}/)
+                  .map((item) => item.trim())
+                  .filter(Boolean)
+                  .length
+              }（最多 20 条）</span>
+            </label>
+            <label style={{ display: "grid", gap: 6 }}>
               <span className="status-text">复用周期</span>
               <input
                 value={draft.reuseCycle}
@@ -524,6 +551,11 @@ export function DouyinTopicLibraryWorkspace(props: DouyinTopicLibraryWorkspacePr
                           {item.presentationFormat ? (
                             <p className="panel-subtext" style={{ margin: 0 }}>
                               {item.presentationFormat}
+                            </p>
+                          ) : null}
+                          {item.matchedExplosiveTemplateHtmls?.length ? (
+                            <p className="panel-subtext" style={{ margin: 0 }}>
+                              已匹配爆款模板：{item.matchedExplosiveTemplateHtmls.length} 条
                             </p>
                           ) : null}
                         </div>

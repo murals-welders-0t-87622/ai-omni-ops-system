@@ -35,6 +35,7 @@ import {
 } from "./markdown-render";
 import { OpenClawLobsterDiaryWorkspace } from "./openclaw-lobster-diary-workspace";
 import { OpenClawDailyPlanWorkspace } from "./openclaw-daily-plan-workspace";
+import { OpenClawExplosiveAnalysisWorkspace } from "./openclaw-explosive-analysis-workspace";
 import { OpportunityInsightStepInputModal } from "./opportunity-insight-step-input-modal";
 import { ReportMaterialLibraryWorkspace } from "./report-material-library-workspace";
 import { NoteCreateModalShell } from "../xiaohongshu/note-create-modal-shell";
@@ -178,9 +179,12 @@ import {
   xiaohongshuMarketingPlanSeed,
 } from "../../../services/reports";
 import {
+  deleteOpenClawExplosiveAnalysis,
+  getOpenClawExplosiveAnalysisWorkspace,
   deleteOpenClawLobsterDiary,
   getOpenClawLobsterDiaryWorkspace,
   updateOpenClawLobsterDiary,
+  type OpenClawExplosiveAnalysisWorkspace as OpenClawExplosiveAnalysisWorkspaceRecord,
   type OpenClawLobsterDiaryWorkspace as OpenClawLobsterDiaryWorkspaceRecord,
   deleteOpenClawDailyPlan,
   getOpenClawDailyPlanWorkspace,
@@ -215,6 +219,7 @@ type StrategyPageKey =
   | "visualGrowthReport"
   | "annualMarketingPlan"
   | "xiaohongshuMarketingCalendar"
+  | "openclawExplosiveAnalysis"
   | "reportTopicLibrary"
   | "reportMaterialLibrary"
   | "openclawDailyPlan"
@@ -318,6 +323,7 @@ const strategySections: Array<{
       { key: "visualGrowthReport", label: "品牌增长可视化报告", description: "输出图表化的品牌增长可视化结果。" },
       { key: "annualMarketingPlan", label: "半年营销规划", description: "形成未来半年节奏、战役安排与重点营销规划。" },
       { key: "xiaohongshuMarketingCalendar", label: "营销日历", description: "基于品牌背景资料、机会洞察总报告和品牌增长报告生成品牌全平台营销日历。" },
+      { key: "openclawExplosiveAnalysis", label: "爆款拆解", description: "承接 OpenClaw 提交的爆款拆解 HTML、作者信息、作品链接和视频文案，并支持查看后留言。" },
       { key: "reportTopicLibrary", label: "选题库", description: "沉淀人工与 OpenClaw 共用的结构化选题，支持查看、编辑、删除与跨平台复用。" },
       { key: "reportMaterialLibrary", label: "素材库", description: "统一归集小红书与抖音素材，供所有平台创作作品共用。" },
     ],
@@ -352,6 +358,7 @@ const strategyPagePermissionMap: Record<StrategyPageKey, BrandPermissionKey> = {
   visualGrowthReport: "brandGrowth.report.visualGrowthReport",
   annualMarketingPlan: "brandGrowth.report.halfYearMarketingPlan",
   xiaohongshuMarketingCalendar: "xiaohongshu.calendar",
+  openclawExplosiveAnalysis: "brandGrowth.report.topicLibrary",
   reportTopicLibrary: "brandGrowth.report.topicLibrary",
   reportMaterialLibrary: "brandGrowth.report.topicLibrary",
   openclawDailyPlan: "brandGrowth.report.topicLibrary",
@@ -494,6 +501,13 @@ function createEmptyAnnualMarketingPlanWorkspace(): AnnualMarketingPlanWorkspace
 }
 
 function createEmptyOpenClawLobsterDiaryWorkspace(): OpenClawLobsterDiaryWorkspaceRecord {
+  return {
+    items: [],
+    total: 0,
+  };
+}
+
+function createEmptyOpenClawExplosiveAnalysisWorkspace(): OpenClawExplosiveAnalysisWorkspaceRecord {
   return {
     items: [],
     total: 0,
@@ -694,6 +708,7 @@ type ReportScopeSnapshot = {
   xiaohongshuMarketingPlanWorkspace: XiaohongshuMarketingPlanWorkspace;
   marketingCalendarWorkspace: XiaohongshuMarketingCalendarWorkspace;
   douyinTopicLibraryWorkspace: DouyinHotTopicCandidatesWorkspace;
+  openClawExplosiveAnalysisWorkspace: OpenClawExplosiveAnalysisWorkspaceRecord;
   openClawLobsterDiaryWorkspace: OpenClawLobsterDiaryWorkspaceRecord;
   openClawDailyPlanWorkspace: OpenClawDailyPlanWorkspaceRecord;
 };
@@ -1162,6 +1177,8 @@ export function BrandGrowthWorkspace() {
   const [marketingCalendarWorkspace, setMarketingCalendarWorkspace] = useState<XiaohongshuMarketingCalendarWorkspace>({ history: [] });
   const [douyinTopicLibraryWorkspace, setDouyinTopicLibraryWorkspace] =
     useState<DouyinHotTopicCandidatesWorkspace>(douyinHotTopicCandidatesSeed);
+  const [openClawExplosiveAnalysisWorkspace, setOpenClawExplosiveAnalysisWorkspace] =
+    useState<OpenClawExplosiveAnalysisWorkspaceRecord>(createEmptyOpenClawExplosiveAnalysisWorkspace);
   const [openClawLobsterDiaryWorkspace, setOpenClawLobsterDiaryWorkspace] =
     useState<OpenClawLobsterDiaryWorkspaceRecord>(createEmptyOpenClawLobsterDiaryWorkspace);
   const [openClawDailyPlanWorkspace, setOpenClawDailyPlanWorkspace] =
@@ -1223,6 +1240,7 @@ export function BrandGrowthWorkspace() {
   const [isGeneratingMarketingCalendar, setIsGeneratingMarketingCalendar] = useState(false);
   const [isGeneratingDouyinTopicCandidates, setIsGeneratingDouyinTopicCandidates] = useState(false);
   const [isSavingDouyinTopicLibrary, setIsSavingDouyinTopicLibrary] = useState(false);
+  const [deletingOpenClawExplosiveAnalysisId, setDeletingOpenClawExplosiveAnalysisId] = useState("");
   const [selectedCalendarItemId, setSelectedCalendarItemId] = useState("");
   const [selectedCalendarDate, setSelectedCalendarDate] = useState("");
   const [isCalendarDetailOpen, setIsCalendarDetailOpen] = useState(false);
@@ -1442,9 +1460,24 @@ export function BrandGrowthWorkspace() {
   );
   const hasPendingDouyinTranscript = useMemo(
     () =>
-      [...douyinCollectionWorkspace.competitorWorks, ...douyinCollectionWorkspace.benchmarkWorks]
-        .some((item) => !String(item.transcript || "").trim() && item.transcriptStatus !== "FAILED"),
-    [douyinCollectionWorkspace.benchmarkWorks, douyinCollectionWorkspace.competitorWorks],
+      [
+        ...douyinCollectionWorkspace.brandWorks,
+        ...douyinCollectionWorkspace.competitorWorks,
+        ...douyinCollectionWorkspace.benchmarkWorks,
+        ...douyinCollectionWorkspace.searchWorks,
+        ...douyinCollectionWorkspace.lowFanExplosiveWorks,
+        ...douyinCollectionWorkspace.highCompletionRateWorks,
+        ...douyinCollectionWorkspace.highLikeRateWorks,
+      ].some((item) => item.transcriptStatus === "PENDING"),
+    [
+      douyinCollectionWorkspace.benchmarkWorks,
+      douyinCollectionWorkspace.brandWorks,
+      douyinCollectionWorkspace.competitorWorks,
+      douyinCollectionWorkspace.highCompletionRateWorks,
+      douyinCollectionWorkspace.highLikeRateWorks,
+      douyinCollectionWorkspace.lowFanExplosiveWorks,
+      douyinCollectionWorkspace.searchWorks,
+    ],
   );
   const sortedDouyinSearchWorks = useMemo(
     () => sortByCollectedAtDesc(douyinCollectionWorkspace.searchWorks),
@@ -1741,6 +1774,7 @@ export function BrandGrowthWorkspace() {
     setXiaohongshuMarketingPlanWorkspace(cachedSnapshot.xiaohongshuMarketingPlanWorkspace);
     setMarketingCalendarWorkspace(cachedSnapshot.marketingCalendarWorkspace);
     setDouyinTopicLibraryWorkspace(cachedSnapshot.douyinTopicLibraryWorkspace || douyinHotTopicCandidatesSeed);
+    setOpenClawExplosiveAnalysisWorkspace(cachedSnapshot.openClawExplosiveAnalysisWorkspace || createEmptyOpenClawExplosiveAnalysisWorkspace());
     setOpenClawLobsterDiaryWorkspace(cachedSnapshot.openClawLobsterDiaryWorkspace || createEmptyOpenClawLobsterDiaryWorkspace());
     setOpenClawDailyPlanWorkspace(cachedSnapshot.openClawDailyPlanWorkspace || createEmptyOpenClawDailyPlanWorkspace());
     setLoadedScopes((current) => (current.report ? current : { ...current, report: true }));
@@ -1920,6 +1954,7 @@ export function BrandGrowthWorkspace() {
       xiaohongshuMarketingPlanWorkspace,
       marketingCalendarWorkspace,
       douyinTopicLibraryWorkspace,
+      openClawExplosiveAnalysisWorkspace,
       openClawLobsterDiaryWorkspace,
       openClawDailyPlanWorkspace,
     });
@@ -1934,6 +1969,7 @@ export function BrandGrowthWorkspace() {
     visualReportWorkspace,
     xiaohongshuMarketingPlanWorkspace,
     douyinTopicLibraryWorkspace,
+    openClawExplosiveAnalysisWorkspace,
     openClawLobsterDiaryWorkspace,
     openClawDailyPlanWorkspace,
   ]);
@@ -2079,6 +2115,7 @@ export function BrandGrowthWorkspace() {
           xiaohongshuMarketingPlanResult,
           marketingCalendarResult,
           douyinTopicLibraryResult,
+          openClawExplosiveAnalysisResult,
           openClawLobsterDiaryResult,
           openClawDailyPlanResult,
         ] = await Promise.allSettled([
@@ -2090,6 +2127,7 @@ export function BrandGrowthWorkspace() {
           getXiaohongshuMarketingPlanWorkspace(resolvedActiveBrandId),
           getXiaohongshuMarketingCalendarWorkspace(resolvedActiveBrandId),
           getDouyinHotTopicCandidatesWorkspace(resolvedActiveBrandId),
+          getOpenClawExplosiveAnalysisWorkspace(resolvedActiveBrandId, "brand_growth"),
           getOpenClawLobsterDiaryWorkspace(resolvedActiveBrandId, "brand_growth"),
           getOpenClawDailyPlanWorkspace(resolvedActiveBrandId, "brand_growth"),
         ]);
@@ -2140,6 +2178,12 @@ export function BrandGrowthWorkspace() {
           setDouyinTopicLibraryWorkspace(douyinTopicLibraryResult.value);
         } else {
           partialFailures.push("选题库");
+        }
+
+        if (openClawExplosiveAnalysisResult.status === "fulfilled") {
+          setOpenClawExplosiveAnalysisWorkspace(openClawExplosiveAnalysisResult.value);
+        } else {
+          partialFailures.push("爆款拆解");
         }
 
         if (openClawLobsterDiaryResult.status === "fulfilled") {
@@ -3691,6 +3735,29 @@ function buildFeishuMediaProxyUrl(sourceUrl?: string, download = false, brandId?
     }
   }
 
+  async function handleDeleteOpenClawExplosiveAnalysis(recordId: string) {
+    if (!brandPermissionSettings?.currentUserPermissions["brandGrowth.report.topicLibrary"]?.edit) {
+      setErrorMessage("当前账号没有删除爆款拆解的权限。");
+      return;
+    }
+    if (!recordId) {
+      return;
+    }
+
+    setDeletingOpenClawExplosiveAnalysisId(recordId);
+    clearMessages();
+    try {
+      const response = await deleteOpenClawExplosiveAnalysis(recordId, activeBrandId || archive.brand.id, "brand_growth");
+      setOpenClawExplosiveAnalysisWorkspace(response.workspace);
+      setNotice("已删除爆款拆解。");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "删除失败";
+      setErrorMessage(`删除爆款拆解失败：${message}`);
+    } finally {
+      setDeletingOpenClawExplosiveAnalysisId("");
+    }
+  }
+
   async function handleAddWechatBenchmarkArticleToMaterial(articleId: string) {
     if (!brandPermissionSettings?.currentUserPermissions["brandGrowth.collection.wechatMpCollection"]?.edit) {
       setErrorMessage("当前账号没有编辑公众号收集数据的权限。");
@@ -3748,6 +3815,9 @@ function buildFeishuMediaProxyUrl(sourceUrl?: string, download = false, brandId?
       return;
     }
 
+    // #region debug-point B:ui-click-extract
+    fetch("http://127.0.0.1:7777/event", { method: "POST", body: JSON.stringify({ sessionId: "douyin-transcript-queue", runId: "pre-fix", hypothesisId: "B", location: "brand-growth/workspace.tsx:handleExtractDouyinWorkTranscript:click", msg: "[DEBUG] UI clicked douyin transcript extract", data: { assetId: item.id, transcriptStatus: item.transcriptStatus || "", videoCacheStatus: item.videoCacheStatus || "", hasTranscript: Boolean(item.transcript), activeExtractingAssetId: extractingDouyinTranscriptAssetId || "" }, ts: Date.now() }) }).catch(() => undefined);
+    // #endregion
     setExtractingDouyinTranscriptAssetId(item.id);
     clearMessages();
 
@@ -5027,6 +5097,24 @@ function buildFeishuMediaProxyUrl(sourceUrl?: string, download = false, brandId?
           }}
           onSaveTopic={handleSaveDouyinTopic}
           onDeleteTopic={handleDeleteDouyinTopic}
+          formatDateTime={formatDateTime}
+        />
+      );
+    }
+
+    if (activePage === "openclawExplosiveAnalysis") {
+      return (
+        <OpenClawExplosiveAnalysisWorkspace
+          sectionLabel={currentPage.label}
+          sectionDescription={currentPage.description}
+          isLoading={isHydrating}
+          canDelete={hasCurrentPageEditPermission}
+          items={openClawExplosiveAnalysisWorkspace.items}
+          deletingRecordId={deletingOpenClawExplosiveAnalysisId}
+          onRefresh={async () => {
+            await loadArchive({ targetPage: activePage, force: true });
+          }}
+          onDelete={handleDeleteOpenClawExplosiveAnalysis}
           formatDateTime={formatDateTime}
         />
       );

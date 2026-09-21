@@ -289,6 +289,7 @@ type DouyinTopicLibraryItem = {
   topicDescription?: string;
   source?: "GENERATED" | "MANUAL" | "OPENCLAW";
   sourceDate?: string;
+  matchedExplosiveTemplateHtmls?: string[];
 };
 
 type DouyinTopicLibraryAssetMeta = {
@@ -13839,6 +13840,9 @@ ${normalizedMarkdown}`;
       const selectedAt = String(item.selectedAt ?? item.generatedAt ?? "").trim() || new Date().toISOString();
       const reusable = this.normalizeDouyinTopicReusable(item.reusable ?? item.isReusable ?? item.reuseable);
       const reuseCycle = String(item.reuseCycle ?? item.repeatCycle ?? "").trim() || undefined;
+      const matchedExplosiveTemplateHtmls = this.normalizeDouyinTopicMatchedExplosiveTemplates(
+        item.matchedExplosiveTemplateHtmls ?? item.matchExplosiveTemplateHtmls ?? item.explosiveTemplateHtmls ?? item.explosiveAnalysisHtmls,
+      );
       uniqueMap.set(dedupeKey, {
         id: String(item.id ?? "").trim() || `topic-library-${index + 1}-${this.createSlug(`${topicPlatform}-${resolvedTopicTitle}`)}`,
         topicTitle: resolvedTopicTitle,
@@ -13854,9 +13858,18 @@ ${normalizedMarkdown}`;
         selectedAt,
         source: this.normalizeDouyinTopicLibrarySource(item.source),
         sourceDate: String(item.sourceDate ?? "").trim() || undefined,
+        matchedExplosiveTemplateHtmls: matchedExplosiveTemplateHtmls.length ? matchedExplosiveTemplateHtmls : undefined,
       });
     }
     return [...uniqueMap.values()];
+  }
+
+  private normalizeDouyinTopicMatchedExplosiveTemplates(raw: unknown) {
+    const values = Array.isArray(raw) ? raw : (typeof raw === "string" && raw.trim() ? [raw] : []);
+    return values
+      .map((item) => String(item || "").trim())
+      .filter(Boolean)
+      .slice(0, 20);
   }
 
   private normalizeDouyinTopicPlatform(value: unknown): DouyinTopicLibraryItem["topicPlatform"] {

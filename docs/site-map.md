@@ -116,7 +116,7 @@
   - 小红书采集、抖音采集、公众号采集（品牌公众号数据 / 对标作品信息及数据 / 微信搜一搜）、每日热点、飞书绑定
   - 抖音采集当前已补齐达人抓取第一期：`达人搜索抓取`、`达人深度抓取`、`达人结果池`
 - 品牌增长报告
-  - 品牌增长报告、可视化报告、半年营销规划、营销日历、选题库、素材库（统一素材库）
+  - 品牌增长报告、可视化报告、半年营销规划、营销日历、爆款拆解、选题库、素材库（统一素材库）
 - OpenClaw专区
   - 龙虾日记 / 每周复盘（仅 OpenClaw Agent 创建，页面侧支持查看后直接编辑与留言）
   - 策略优化记录（由 OpenClaw 基于每周复盘生成，页面侧支持查看、编辑、留言与删除）
@@ -125,7 +125,10 @@
 
 - 首次进入会通过 `/auth/me` 校正真实品牌上下文
 - `品牌增长报告 -> 选题库` 当前已收口为人工与 OpenClaw 共用的结构化选题库；品牌增长页不再展示“热门找选题”板块，只保留选题沉淀、查看、编辑、删除
+- `品牌增长报告 -> 爆款拆解` 当前为 OpenClaw 独立 HTML 真源板块，支持列表查看、HTML 详情预览、删除与留言协作
+- `品牌增长报告 -> 选题库` 当前新增 `匹配爆款模板` 字段，可由 OpenClaw 写入多个爆款拆解 HTML
 - 参考变更：`docs/changes/2026-08-27-brand-growth-topic-library-generalization.md`
+- 参考变更：`docs/changes/2026-09-21-openclaw-explosive-analysis-and-topic-template-linking.md`
 - 报告类任务走后台任务中心
 - 知识绑定已进入部分报告运行时
 - 营销日历真源已收口在品牌增长策略；内容获客三端当前新增的是同一份营销日历的按平台过滤视图，而不是第二套日历存储
@@ -138,7 +141,11 @@
 - 抖音采集作品的视频预览缓存现在统一走受控副本链路：网页态继续可读 OSS，缺 OSS 的本地运行态则通过 `collectors/douyin` 受控媒体接口读取本地副本，不再因为没有 OSS 而丢失预览
 - 抖音采集表格当前会直接回显视频存储位置；若视频缓存失败或过期，页面会同时保留原作品回看入口，方便判断问题到底出在站内副本还是源作品
 - 抖音采集视频文案提取当前默认走本地 ASR 链路：Paraformer 主识别、Whisper 兜底；系统会记录状态更新时间，当本地 ASR 环境未就绪或任务长时间卡住时，会自动收口为可重试失败态
-- 标准 Docker 首装默认不再强制预装本地 ASR Python 重依赖；若后续需要视频文案提取，可再通过 `INSTALL_LOCAL_ASR=1` 重建 `db-init/server` 启用
+- 抖音视频文案提取当前已统一到同一条串行队列：
+  - 手动点击“提取文案”不再直接并发拉起 ASR，而是先标记 `PENDING` 后入队
+  - 采集完成后的自动提取与服务重启后的恢复也复用同一条队列
+  - 同一条作品在队列内会做 in-flight 去重，降低连续点击和重启恢复叠加时的卡顿
+- 本地标准 Docker 运行态默认会预装本地 ASR Python 重依赖；若旧环境曾关闭该能力，可再通过 `INSTALL_LOCAL_ASR_BUILD=1` 重建 `db-init/server` 恢复视频文案提取
 - 小红书 / 抖音收集数据中的“评论数据”卡片现已补齐“从评论提取账号链接”动作，可直接把作品链接补拉为评论数据，再按关键词筛出评论用户并沉淀为目标用户账号链接结果，供 OpenClaw 与人工验证共用
 - `品牌增长策略 -> 收集数据` 当前已把站内已落地的主要采集动作同步开放给 OpenClaw / MCP：
   - 小红书：评论数据同步、二级评论读取
@@ -158,6 +165,7 @@
 - 参考变更：`docs/changes/2026-08-25-brand-growth-ip-library.md`
 - 参考变更：`docs/changes/2026-08-27-ip-voice-material-preview-openclaw-git-skill.md`
 - 参考变更：`docs/changes/2026-08-27-douyin-collection-preview-and-transcript-retry-ux.md`
+- 参考变更：`docs/changes/2026-09-21-douyin-transcript-queue-and-startup-resume-fix.md`
 - 参考变更：`docs/changes/2026-09-09-douyin-creator-collection-workbench-phase-1.md`
 - 参考变更：`docs/changes/2026-09-15-openclaw-brand-growth-collection-tooling-completion.md`
 
@@ -246,6 +254,13 @@
 - 营销策划方案
 - 热点找选题
 - 选题库
+  - 新增 `匹配爆款模板` 字段，支持沉淀多个爆款拆解 HTML
+  - 参考变更：`docs/changes/2026-09-21-openclaw-explosive-analysis-and-topic-template-linking.md`
+- 爆款拆解
+  - 位于 `营销日历` 下、`选题库` 上
+  - 由 OpenClaw 创建独立 HTML 拆解记录，支持查看、删除、留言
+  - 列表字段：标题、标签、作者、作品链接、视频文案、创建时间
+  - 参考变更：`docs/changes/2026-09-21-openclaw-explosive-analysis-and-topic-template-linking.md`
 - 原创文案
 - 二创文案
 - 复刻短视频

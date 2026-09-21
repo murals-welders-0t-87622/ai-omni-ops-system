@@ -7,7 +7,7 @@ import {
   normalizeOpenClawWorkspaceScope,
 } from "./openclaw-workspace-scope";
 
-const OPENCLAW_COMMENT_RESOURCE_TYPES = ["creative_material", "daily_plan", "lobster_diary", "strategy_optimization", "marketing_plan", "video_work", "tencent_ad_lead"] as const;
+const OPENCLAW_COMMENT_RESOURCE_TYPES = ["creative_material", "daily_plan", "explosive_analysis", "lobster_diary", "strategy_optimization", "marketing_plan", "video_work", "tencent_ad_lead"] as const;
 
 export type OpenClawCommentResourceType = (typeof OPENCLAW_COMMENT_RESOURCE_TYPES)[number];
 

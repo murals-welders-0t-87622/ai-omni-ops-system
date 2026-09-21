@@ -167,6 +167,9 @@
 - `get_brand_growth_marketing_calendar_workspace`
 - `generate_brand_growth_marketing_calendar`
 - `update_brand_growth_marketing_calendar`
+- `get_openclaw_explosive_analyses`
+- `create_openclaw_explosive_analysis`
+- `delete_openclaw_explosive_analysis`
 - `get_brand_growth_topic_library_workspace`
 - `generate_brand_growth_topic_candidates`
 - `update_brand_growth_topic_library`
@@ -181,6 +184,7 @@
 - 继续推进 step1 / step2 / step3
 - 生成增长报告、半年营销规划、营销策划方案
 - 读取营销日历、选题库、统一素材库相关能力
+- 查看、创建、删除品牌增长报告下的 `爆款拆解` HTML 记录
 - 直接补某一天的营销日历内容，例如把 2026-07-15 的当天主题、各平台选题和朋友圈内容补进去
 - 处理内容获客下某书 / 某音/某号 / 公众号的 `营销日历` 入口；这三个入口当前不新增第二套工具，继续复用品牌增长营销日历语义工具
 - 当前营销日历已经去掉技能中心依赖：OpenClaw 直接走 `manage_growth_reports` 即可，后端不再先读取营销日历 skill / prompt 配置
@@ -223,6 +227,7 @@
 
 - 可视化报告：`get_brand_growth_visual_report_workspace`、`generate_brand_growth_visual_report`
 - 营销日历：`get_brand_growth_marketing_calendar_workspace`、`generate_brand_growth_marketing_calendar`、`update_brand_growth_marketing_calendar`
+- 爆款拆解：`get_openclaw_explosive_analyses`、`create_openclaw_explosive_analysis`、`delete_openclaw_explosive_analysis`
 - 选题库：`get_brand_growth_topic_library_workspace`、`generate_brand_growth_topic_candidates`、`update_brand_growth_topic_library`、`create_brand_growth_topic_library_item`、`update_brand_growth_topic_library_item`、`delete_brand_growth_topic_library_item`
 - 素材库：`get_brand_growth_material_library_items`
 
@@ -235,6 +240,7 @@
   - 某书：只写 `xiaohongshu.*`
   - 某音/某号：只写 `douyin.*`
   - 公众号：只写 `moments.*`
+- `爆款拆解` 走 OpenClaw 独立真源；如果用户还要求把某条爆款拆解 HTML 关联回选题库，需要额外调用 `create_brand_growth_topic_library_item` 或 `update_brand_growth_topic_library_item` 写入 `matchedExplosiveTemplateHtmls`
 
 ## 6. 任务与反馈
 
@@ -577,6 +583,28 @@ RunningHub 上传节点补充规则：
 - `create_openclaw_tencent_ad_lead`
   - 用于把 OpenClaw 生成完成的腾讯投流获客内容写入 `投流获客 -> 腾讯投流获客`
   - 详情页默认支持正文查看、留言协作和删除
+
+### 14.4A 爆款拆解
+
+- `get_openclaw_explosive_analyses`
+- `create_openclaw_explosive_analysis`
+- `delete_openclaw_explosive_analysis`
+
+爆款拆解当前统一字段：
+
+- `title`
+- `tags`
+- `htmlContent`
+- `authorName`
+- `workUrl`
+- `videoCopy`
+- `createdAt`
+
+爆款拆解补充：
+
+- `create_openclaw_explosive_analysis`
+  - 用于把 OpenClaw 生成完成的爆款拆解 HTML 写入 `品牌增长报告 -> 爆款拆解`
+  - 详情页默认支持 HTML 预览、留言协作和删除
 
 ### 14.5 达人合作
 

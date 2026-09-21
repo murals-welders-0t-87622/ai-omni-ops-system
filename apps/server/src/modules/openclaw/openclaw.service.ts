@@ -30,6 +30,7 @@ import { OpenClawGeoContentService } from "./openclaw-geo-content.service";
 import { OpenClawThirdPartyMediaResourceService } from "./openclaw-third-party-media-resource.service";
 import { OpenClawInstallationService } from "./openclaw-installation.service";
 import { OpenClawDailyPlanService } from "./openclaw-daily-plan.service";
+import { OpenClawExplosiveAnalysisService } from "./openclaw-explosive-analysis.service";
 import { OpenClawGeoVisibilityReportService } from "./openclaw-geo-visibility-report.service";
 import { OpenClawLobsterDiaryService } from "./openclaw-lobster-diary.service";
 import { OpenClawMarketingPlanService } from "./openclaw-marketing-plan.service";
@@ -481,6 +482,25 @@ const OPENCLAW_WEBSITE_FUNCTION_CATALOG: OpenClawWebsiteFunctionCatalogItem[] = 
     ],
   },
   {
+    key: "openclaw_explosive_analysis",
+    domainKey: "openclaw",
+    domainName: "OpenClaw 专区",
+    name: "查看并管理爆款拆解",
+    summary: "适合查看 OpenClaw 提交的爆款拆解 HTML、标签、作者和视频文案，并在网页详情里留言协作。",
+    pageUrl: "/brand-growth",
+    pageLabel: "打开品牌增长策略",
+    riskLevel: "low",
+    intentKeywords: ["爆款拆解", "爆款模板", "html拆解", "视频文案", "openclaw", "留言"],
+    requiredInputKeys: ["title", "htmlContent"],
+    requiredInputs: ["标题", "HTML 内容"],
+    recommendedQuestions: ["帮我看当前品牌的爆款拆解列表", "帮我提交一条爆款拆解"],
+    mcpTools: [
+      "get_openclaw_explosive_analyses",
+      "create_openclaw_explosive_analysis",
+      "delete_openclaw_explosive_analysis",
+    ],
+  },
+  {
     key: "openclaw_strategy_optimization",
     domainKey: "openclaw",
     domainName: "OpenClaw 专区",
@@ -779,11 +799,11 @@ const OPENCLAW_WEBSITE_FUNCTION_CATALOG: OpenClawWebsiteFunctionCatalogItem[] = 
     domainKey: "brand_growth",
     domainName: "品牌增长",
     name: "生成品牌增长报告、营销规划与统一素材库结果",
-    summary: "适合在对话中直接触发品牌增长报告、半年营销规划、营销策划，并读取营销日历、选题库和统一素材库结果。",
+    summary: "适合在对话中直接触发品牌增长报告、半年营销规划、营销策划，并读取营销日历、爆款拆解、选题库和统一素材库结果。",
     pageUrl: "/brand-growth",
     pageLabel: "打开品牌增长工作台",
     riskLevel: "medium",
-    intentKeywords: ["增长报告", "半年营销规划", "营销策划", "营销日历", "选题库", "统一素材库", "品牌增长报告"],
+    intentKeywords: ["增长报告", "半年营销规划", "营销策划", "营销日历", "爆款拆解", "选题库", "统一素材库", "品牌增长报告"],
     requiredInputKeys: ["brandId"],
     requiredInputs: ["当前品牌"],
     recommendedQuestions: ["帮我做一份品牌增长报告", "帮我生成半年营销规划并看看最近素材库有什么可复用内容"],
@@ -797,6 +817,9 @@ const OPENCLAW_WEBSITE_FUNCTION_CATALOG: OpenClawWebsiteFunctionCatalogItem[] = 
       "get_brand_growth_marketing_calendar_workspace",
       "generate_brand_growth_marketing_calendar",
       "update_brand_growth_marketing_calendar",
+      "get_openclaw_explosive_analyses",
+      "create_openclaw_explosive_analysis",
+      "delete_openclaw_explosive_analysis",
       "get_brand_growth_topic_library_workspace",
       "generate_brand_growth_topic_candidates",
       "update_brand_growth_topic_library",
@@ -1005,7 +1028,7 @@ const OPENCLAW_MCP_TOOLS: OpenClawMcpToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        limit: { type: "integer", minimum: 1, maximum: 100 },
+        limit: { type: "integer", minimum: 1, maximum: 5000 },
       },
       additionalProperties: false,
     },
@@ -1635,7 +1658,7 @@ const OPENCLAW_MCP_TOOLS: OpenClawMcpToolDefinition[] = [
       type: "object",
       properties: {
         category: { type: "string", enum: ["text", "image", "audio", "video"], description: "可选：素材类型筛选。" },
-        limit: { type: "integer", minimum: 1, maximum: 100 },
+        limit: { type: "integer", minimum: 1, maximum: 5000 },
       },
       additionalProperties: false,
     },
@@ -2359,7 +2382,7 @@ const OPENCLAW_MCP_TOOLS: OpenClawMcpToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        limit: { type: "integer", minimum: 1, maximum: 100 },
+        limit: { type: "integer", minimum: 1, maximum: 5000 },
       },
       additionalProperties: false,
     },
@@ -2522,7 +2545,7 @@ const OPENCLAW_MCP_TOOLS: OpenClawMcpToolDefinition[] = [
       type: "object",
       properties: {
         workspaceScope: { type: "string", enum: ["brand_growth", "xiaohongshu", "douyin", "wechat", "geo"], description: "可选：指定板块作用域，默认 brand_growth。" },
-        limit: { type: "integer", minimum: 1, maximum: 100 },
+        limit: { type: "integer", minimum: 1, maximum: 5000 },
       },
       additionalProperties: false,
     },
@@ -2605,6 +2628,49 @@ const OPENCLAW_MCP_TOOLS: OpenClawMcpToolDefinition[] = [
       properties: {
         workspaceScope: { type: "string", enum: ["brand_growth", "xiaohongshu", "douyin", "wechat", "geo"], description: "可选：删除所在板块，默认 brand_growth。" },
         recordId: { type: "string", description: "营销策划方案 ID。" },
+      },
+      required: ["recordId"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "get_openclaw_explosive_analyses",
+    description: "查看当前品牌指定板块下的爆款拆解列表。",
+    inputSchema: {
+      type: "object",
+      properties: {
+        workspaceScope: { type: "string", enum: ["brand_growth", "xiaohongshu", "douyin", "wechat", "geo"], description: "可选：指定板块作用域，默认 brand_growth。" },
+        limit: { type: "integer", minimum: 1, maximum: 100 },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "create_openclaw_explosive_analysis",
+    description: "为当前品牌指定板块创建一条爆款拆解记录。",
+    inputSchema: {
+      type: "object",
+      properties: {
+        workspaceScope: { type: "string", enum: ["brand_growth", "xiaohongshu", "douyin", "wechat", "geo"], description: "可选：写入哪个板块，默认 brand_growth。" },
+        title: { type: "string", description: "爆款拆解标题。" },
+        tags: { type: "array", items: { type: "string" }, description: "可选：标签列表。" },
+        htmlContent: { type: "string", description: "完整 HTML 内容。" },
+        authorName: { type: "string", description: "可选：作者名称。" },
+        workUrl: { type: "string", description: "可选：作品链接。" },
+        videoCopy: { type: "string", description: "可选：视频文案。" },
+      },
+      required: ["title", "htmlContent"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "delete_openclaw_explosive_analysis",
+    description: "删除指定板块下的一条爆款拆解。",
+    inputSchema: {
+      type: "object",
+      properties: {
+        workspaceScope: { type: "string", enum: ["brand_growth", "xiaohongshu", "douyin", "wechat", "geo"], description: "可选：删除所在板块，默认 brand_growth。" },
+        recordId: { type: "string", description: "爆款拆解 ID。" },
       },
       required: ["recordId"],
       additionalProperties: false,
@@ -3768,6 +3834,7 @@ export class OpenClawService {
     private readonly openClawInstallationService: OpenClawInstallationService,
     private readonly openClawLobsterDiaryService: OpenClawLobsterDiaryService,
     private readonly openClawDailyPlanService: OpenClawDailyPlanService,
+    private readonly openClawExplosiveAnalysisService: OpenClawExplosiveAnalysisService,
     private readonly openClawMarketingPlanService: OpenClawMarketingPlanService,
     private readonly openClawTencentAdLeadService: OpenClawTencentAdLeadService,
     private readonly openClawCreatorCooperationService: OpenClawCreatorCooperationService,
@@ -9396,6 +9463,118 @@ export class OpenClawService {
     });
   }
 
+  async getOpenClawExplosiveAnalyses(
+    headers: HeadersMap,
+    options?: {
+      workspaceScope?: string;
+      limit?: number;
+    },
+  ) {
+    const auth = await this.requireAuth(headers);
+    const brandId = await this.requireCurrentBrandId(auth);
+    await this.authService.assertBrandPermission(brandId, "brandGrowth.report.topicLibrary", "view", auth);
+    const workspaceScope = normalizeOpenClawWorkspaceScope(options?.workspaceScope);
+    const workspaceLabel = getOpenClawWorkspaceDisplayName(workspaceScope);
+    const workspacePath = getOpenClawWorkspaceDashboardPath(workspaceScope);
+    const workspace = await this.openClawExplosiveAnalysisService.listWorkspace(brandId, workspaceScope, options?.limit);
+    const items = workspace.items.slice(0, this.normalizeLimit(options?.limit));
+
+    return this.buildSummaryResponse({
+      title: `${workspaceLabel}爆款拆解`,
+      summary: workspace.total
+        ? `当前品牌 ${workspaceLabel} 板块共有 ${workspace.total} 条爆款拆解。`
+        : `当前品牌 ${workspaceLabel} 板块还没有爆款拆解，OpenClaw 可先提交首条 HTML 拆解。`,
+      highlights: items.length
+        ? items.slice(0, 5).map((item) => `${item.createdAt}｜${item.title}`)
+        : ["记录数：0"],
+      data: {
+        total: workspace.total,
+        items,
+      },
+      links: [{ label: `打开${workspaceLabel}工作台`, url: workspacePath }],
+      resourceKind: "openclaw_explosive_analysis",
+    });
+  }
+
+  async createOpenClawExplosiveAnalysis(
+    headers: HeadersMap,
+    options?: {
+      workspaceScope?: string;
+      title?: string;
+      tags?: string[];
+      htmlContent?: string;
+      authorName?: string;
+      workUrl?: string;
+      videoCopy?: string;
+    },
+  ) {
+    const auth = await this.requireAuth(headers);
+    const brandId = await this.requireCurrentBrandId(auth);
+    await this.authService.assertBrandPermission(brandId, "brandGrowth.report.topicLibrary", "edit", auth);
+    const workspaceScope = normalizeOpenClawWorkspaceScope(options?.workspaceScope);
+    const workspaceLabel = getOpenClawWorkspaceDisplayName(workspaceScope);
+    const workspacePath = getOpenClawWorkspaceDashboardPath(workspaceScope);
+
+    const item = await this.openClawExplosiveAnalysisService.createRecord({
+      brandId,
+      workspaceScope,
+      createdByUserId: auth.userId,
+      title: options?.title,
+      tags: options?.tags,
+      htmlContent: options?.htmlContent,
+      authorName: options?.authorName,
+      workUrl: options?.workUrl,
+      videoCopy: options?.videoCopy,
+    });
+
+    return this.buildSummaryResponse({
+      title: `${workspaceLabel}爆款拆解已提交`,
+      summary: `已在 ${workspaceLabel} 板块提交爆款拆解《${item.title}》。`,
+      highlights: [
+        `创建时间：${item.createdAt}`,
+        `标题：${item.title}`,
+      ],
+      data: item,
+      links: [{ label: `打开${workspaceLabel}工作台`, url: workspacePath }],
+      resourceKind: "openclaw_explosive_analysis",
+      resultStatus: "COMPLETED",
+    });
+  }
+
+  async deleteOpenClawExplosiveAnalysis(
+    headers: HeadersMap,
+    options?: {
+      workspaceScope?: string;
+      recordId?: string;
+    },
+  ) {
+    const auth = await this.requireAuth(headers);
+    const brandId = await this.requireCurrentBrandId(auth);
+    await this.authService.assertBrandPermission(brandId, "brandGrowth.report.topicLibrary", "edit", auth);
+    const workspaceScope = normalizeOpenClawWorkspaceScope(options?.workspaceScope);
+    const workspaceLabel = getOpenClawWorkspaceDisplayName(workspaceScope);
+    const workspacePath = getOpenClawWorkspaceDashboardPath(workspaceScope);
+    const recordId = String(options?.recordId || "").trim();
+    if (!recordId) {
+      throw new BadRequestException("请提供 recordId");
+    }
+
+    const item = await this.openClawExplosiveAnalysisService.deleteRecord(brandId, workspaceScope, recordId);
+
+    return this.buildSummaryResponse({
+      title: `${workspaceLabel}爆款拆解已删除`,
+      summary: `已从 ${workspaceLabel} 板块删除爆款拆解《${item.title}》。`,
+      highlights: [
+        `创建时间：${item.createdAt}`,
+        `记录 ID：${item.id}`,
+      ],
+      data: item,
+      links: [{ label: `打开${workspaceLabel}工作台`, url: workspacePath }],
+      resourceKind: "openclaw_explosive_analysis",
+      resultStatus: "COMPLETED",
+    });
+  }
+
   async getOpenClawStrategyOptimizations(
     headers: HeadersMap,
     options?: {
@@ -10299,7 +10478,9 @@ export class OpenClawService {
       sourcePlatform: typeof options?.sourcePlatform === "string" ? options.sourcePlatform : undefined,
       limit: options?.limit,
     });
-    const items = workspace.items.slice(0, this.normalizeLimit(options?.limit));
+    const items = typeof options?.limit === "number" && options.limit > 0
+      ? workspace.items.slice(0, Math.min(5000, Math.floor(options.limit)))
+      : workspace.items;
     const sourcePlatform = String(options?.sourcePlatform || "").trim();
     const sourceLabel =
       sourcePlatform === "xiaohongshu" ? "小红书"
@@ -10419,7 +10600,9 @@ export class OpenClawService {
       workspaceScope,
       limit: options?.limit,
     });
-    const items = workspace.items.slice(0, this.normalizeLimit(options?.limit));
+    const items = typeof options?.limit === "number" && options.limit > 0
+      ? workspace.items.slice(0, Math.min(5000, Math.floor(options.limit)))
+      : workspace.items;
 
     return this.buildSummaryResponse({
       title: `${workspaceLabel}平台获客`,
@@ -13184,6 +13367,9 @@ export class OpenClawService {
               reuseCycle: typeof item.reuseCycle === "string" && item.reuseCycle.trim() ? item.reuseCycle.trim() : undefined,
               selectedAt: typeof item.selectedAt === "string" && item.selectedAt.trim() ? item.selectedAt.trim() : new Date().toISOString(),
               topicDescription: typeof item.topicDescription === "string" && item.topicDescription.trim() ? item.topicDescription.trim() : undefined,
+              matchedExplosiveTemplateHtmls: Array.isArray(item.matchedExplosiveTemplateHtmls)
+                ? item.matchedExplosiveTemplateHtmls.map((entry) => String(entry || "").trim()).filter(Boolean).slice(0, 20)
+                : undefined,
               source: "OPENCLAW",
               sourceDate: typeof item.sourceDate === "string" && item.sourceDate.trim() ? item.sourceDate.trim() : undefined,
             },
@@ -13220,6 +13406,9 @@ export class OpenClawService {
                 ...item,
                 id: topicId,
                 selectedAt: typeof item.selectedAt === "string" && item.selectedAt.trim() ? item.selectedAt.trim() : current.selectedAt,
+                matchedExplosiveTemplateHtmls: Array.isArray(item.matchedExplosiveTemplateHtmls)
+                  ? item.matchedExplosiveTemplateHtmls.map((entry) => String(entry || "").trim()).filter(Boolean).slice(0, 20)
+                  : current.matchedExplosiveTemplateHtmls,
                 source: current.source || "OPENCLAW",
               }
             : current)),
@@ -15922,6 +16111,28 @@ export class OpenClawService {
         return this.getOpenClawStrategyOptimizations(headers, {
           workspaceScope: typeof toolArgs.workspaceScope === "string" ? toolArgs.workspaceScope : undefined,
           limit: typeof toolArgs.limit === "number" ? toolArgs.limit : undefined,
+        });
+      case "get_openclaw_explosive_analyses":
+        return this.getOpenClawExplosiveAnalyses(headers, {
+          workspaceScope: typeof toolArgs.workspaceScope === "string" ? toolArgs.workspaceScope : undefined,
+          limit: typeof toolArgs.limit === "number" ? toolArgs.limit : undefined,
+        });
+      case "create_openclaw_explosive_analysis":
+        return this.createOpenClawExplosiveAnalysis(headers, {
+          workspaceScope: typeof toolArgs.workspaceScope === "string" ? toolArgs.workspaceScope : undefined,
+          title: typeof toolArgs.title === "string" ? toolArgs.title : undefined,
+          tags: Array.isArray(toolArgs.tags)
+            ? toolArgs.tags.map((item) => String(item || "").trim()).filter(Boolean)
+            : undefined,
+          htmlContent: typeof toolArgs.htmlContent === "string" ? toolArgs.htmlContent : undefined,
+          authorName: typeof toolArgs.authorName === "string" ? toolArgs.authorName : undefined,
+          workUrl: typeof toolArgs.workUrl === "string" ? toolArgs.workUrl : undefined,
+          videoCopy: typeof toolArgs.videoCopy === "string" ? toolArgs.videoCopy : undefined,
+        });
+      case "delete_openclaw_explosive_analysis":
+        return this.deleteOpenClawExplosiveAnalysis(headers, {
+          workspaceScope: typeof toolArgs.workspaceScope === "string" ? toolArgs.workspaceScope : undefined,
+          recordId: typeof toolArgs.recordId === "string" ? toolArgs.recordId : undefined,
         });
       case "get_openclaw_marketing_plans":
         return this.getOpenClawMarketingPlans(headers, {

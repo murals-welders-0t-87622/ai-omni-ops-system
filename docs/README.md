@@ -41,6 +41,8 @@
   - 个人中心、多用户、品牌协作与权限设计
 - `docs/system-refactor-roadmap.md`
   - 当前结构收口与重构路线
+- `docs/workbuddy-ontology-engineering-plan.md`
+  - 结合 WorkBuddy、Skill、MCP 与中台数据库，提出适配当前系统的轻量 Ontology 工程化方案，目标是把“品牌运营业务对象 + 动作 + 约束 + 编排”固化成一层统一规则
 - `docs/production-stability-and-performance-remediation-plan.md`
   - 生产稳定性、部署降压、首屏性能和慢任务异步化治理方案
 - `docs/wechat-infrastructure-refactor-plan.md`
@@ -58,8 +60,16 @@
 - 作用：记录重要改动的背景、范围、验证和后续事项
 - 要求：真实代码改动默认同步补一条变更记录
 - 最新补充：
+  - `docs/changes/2026-09-21-douyin-transcript-queue-and-startup-resume-fix.md`
+    - 修复抖音视频文案提取“手动入口直跑、自动队列空转、服务重启后默认不续跑”的组合问题；当前手动提取已统一改为串行入队，启动恢复默认开启，并对同一资产增加 in-flight 去重
+  - `docs/changes/2026-09-20-standard-docker-default-local-asr-runtime.md`
+    - 把本地标准 Docker 基线重新收口为默认预装本地 ASR Python 运行时，并通过新的 `INSTALL_LOCAL_ASR_BUILD` 构建参数避免旧 `.env` 中 `INSTALL_LOCAL_ASR=0` 把新镜像继续卡在“未安装 ASR”状态
+  - `docs/changes/2026-09-20-personal-material-auto-sync-and-douyin-transcript-expansion.md`
+    - 个人中心素材管理开始自动并入系统内采集素材，抖音视频文案自动提取也从部分作品类型扩到全部抖音作品类型，并把当前受控存储与缓存边界写清楚
   - `docs/changes/2026-09-18-duoyuanx-image-model-additions-and-openclaw-sync.md`
     - 给多元探索图像目录补入 `gpt-image-2.5-sunburst` 与 `gpt-image-2.5-flare`，并同步更新 OpenClaw 设计工作台相关 MCP / Skill 说明
+  - `docs/changes/2026-09-17-hypit-local-studio-status-and-integration-notes.md`
+    - 记录 `测试/hypit` 当前本地 Docker Studio 的真实状态：Studio 页面已可访问，但 runtime/build/render 与主系统 API / MCP 仍未接通，并给出后续适配层接入建议
   - `docs/changes/2026-09-17-standard-docker-optional-local-asr-install.md`
     - 把标准 Docker 首装改成默认不预装本地 ASR Python 重依赖，避免新机器因 `pip / torch / TLS` 下载问题把 `db-init + server + web` 整体卡死；需要视频文案提取时再通过 `INSTALL_LOCAL_ASR=1` 单独启用
   - `docs/changes/2026-09-17-standard-runtime-install-guide-and-openclaw-install-sync.md`
@@ -80,6 +90,8 @@
     - 给个人中心 `版本与升级` 补齐标准运行态的版本号回退显示、安装前软件/依赖说明、下载项目与安装命令，并同步把根 `README.md` 改成一套可直接照抄的安装/更新步骤
   - `docs/changes/2026-08-27-brand-growth-topic-library-generalization.md`
     - 把 `品牌增长报告 -> 选题库` 从旧抖音热点沉淀页升级为人工与 OpenClaw 共用的结构化选题库；品牌增长页去掉“热门找选题”区，并同步补齐查看 / 编辑 / 删除与 MCP / Skill 单条 CRUD
+  - `docs/changes/2026-09-21-openclaw-explosive-analysis-and-topic-template-linking.md`
+    - 给 `品牌增长报告` 新增 `爆款拆解` 独立板块，并为 `选题库` 补齐 `匹配爆款模板` 多 HTML 字段；同时同步 OpenClaw MCP / Skill 路由
   - `docs/changes/2026-08-27-douyin-collection-preview-and-transcript-retry-ux.md`
     - 收口品牌增长策略里抖音采集作品的站内受控视频预览、本地/OSS 存储位置回显、文案提取卡住超时回收，以及余额恢复后的重新提取体验，并同步 OpenClaw / MCP / Skill 新增 `extract_douyin_work_transcript`
   - `docs/changes/2026-08-25-brand-growth-ip-library.md`
@@ -189,6 +201,12 @@
 - 已放弃的多-agent 方案文档已经移除，不再作为当前开发模式的一部分
 
 ## 最近应优先关注的文档
+- `docs/changes/2026-09-21-douyin-transcript-queue-and-startup-resume-fix.md`
+  - 修复抖音视频文案提取“只能手动点、连续点多个会卡、服务重启后不自动续跑”的队列与启动恢复问题；当前手动入口、自动入队和启动恢复已统一到同一条串行队列
+- `docs/changes/2026-09-20-standard-docker-default-local-asr-runtime.md`
+  - 当前本地标准 Docker 基线已经重新切回“默认预装本地 ASR”，旧环境若之前关过 ASR，需要重建 `db-init/server` 才会真正把 Python 运行时装进镜像
+- `docs/changes/2026-09-20-personal-material-auto-sync-and-douyin-transcript-expansion.md`
+  - 收口个人中心素材管理与内容采集真源的展示断层：系统内已落库的采集素材现在会自动同步进素材管理，同时抖音视频文案自动提取扩大到全部作品类型
 - `docs/changes/2026-09-08-douyin-transcript-local-asr-pipeline.md`
   - 把抖音采集视频文案提取从 GLM 直接读视频切到本地 ASR 链路：Paraformer 主识别、Whisper 兜底，并同步补齐 Docker Python 运行时与 OpenClaw / Skill 说明
 - `docs/changes/2026-09-08-douyin-video-preview-and-transcript-hover-fix.md`
@@ -251,6 +269,8 @@
   - 版本页标准运行态补齐“版本号 + 安装前软件/依赖 + 下载项目/安装/更新命令”，并同步刷新根 `README.md`
 - `docs/changes/2026-08-27-brand-growth-topic-library-generalization.md`
   - 把 `品牌增长报告 -> 选题库` 收口为结构化选题库：品牌增长页去掉热点板块，人工与 OpenClaw 共用同一份选题记录，并新增单条增删改的 MCP / Skill 路由
+- `docs/changes/2026-09-21-openclaw-explosive-analysis-and-topic-template-linking.md`
+  - 给 `品牌增长报告` 新增 `爆款拆解` 独立板块，补齐查看 / 删除 / HTML 详情留言；并为 `选题库` 增加 `匹配爆款模板` 多 HTML 字段与 OpenClaw MCP / Skill 路由
 - `docs/changes/2026-08-27-standard-version-workspace-fallback-guide.md`
   - 把个人中心 `版本与升级` 在标准运行态下从“纯 manifest 依赖”补成“仓库版本记录 + Docker 更新命令 + Skill/MCP 同步提醒”的回退模式；即使没有远端清单，也不再显示空壳版本页
 - `docs/changes/2026-08-27-ip-voice-material-preview-openclaw-git-skill.md`
