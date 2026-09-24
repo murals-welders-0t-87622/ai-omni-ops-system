@@ -281,7 +281,9 @@
 
 - 真正创建任务前先看 options
 - 指定模型时必须使用返回的 `selectionKey`
-- 有参考图时优先带上 `referenceImageUrl` 或 `referenceImage`
+- 有参考图时可带上 `referenceImageUrl` 或 `referenceImage`；图片模块默认 `referenceImageMode="edit_reference"`，参考图会作为图像输入发送给生图模型
+- 只有用户明确要求完全忽略参考图、只按文字生成时，才传 `referenceImageMode="prompt_only"`
+- 主体与场景要求传入 `additionalInstruction`；`prompt` 是兼容别名，`styleHint` 保持旧版兼容
 - 图片模块默认就是给 OpenClaw 直接调用生图模型自由出图：
   - 不自动套社媒配图模板
   - 不默认植入品牌资料

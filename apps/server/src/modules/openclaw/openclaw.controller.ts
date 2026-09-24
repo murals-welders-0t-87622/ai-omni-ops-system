@@ -843,6 +843,7 @@ export class OpenClawController {
       calendarItemId?: string;
       productId?: string;
       injectBrandProfile?: boolean;
+      referenceImageMode?: "prompt_only" | "edit_reference";
       referenceImage?: {
         fileName?: string;
         contentType?: string;

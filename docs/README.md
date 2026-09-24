@@ -60,6 +60,12 @@
 - 作用：记录重要改动的背景、范围、验证和后续事项
 - 要求：真实代码改动默认同步补一条变更记录
 - 最新补充：
+  - `docs/changes/2026-09-25-openclaw-reference-forwarding-and-prompt-diagnostics.md`
+    - 恢复 OpenClaw 图片任务默认发送参考图；确认 MCP 指令字段未接入，并增加 `prompt` 兼容映射与脱敏诊断
+  - `docs/changes/2026-09-25-openclaw-reference-image-prompt-only-policy.md`
+    - 记录曾实施但已被纠正的策略；对照测试证明禁用参考图并未修复 prompt 遵从度
+  - `docs/changes/2026-09-24-openclaw-free-image-prompt-priority-fix.md`
+    - 修复自由生图在用户要求更换主体时仍被系统附加指令要求继承参考图主体的问题；默认关闭品牌资料注入时也不再自动把当前品牌名写进 prompt
   - `docs/changes/2026-09-21-douyin-transcript-queue-and-startup-resume-fix.md`
     - 修复抖音视频文案提取“手动入口直跑、自动队列空转、服务重启后默认不续跑”的组合问题；当前手动提取已统一改为串行入队，启动恢复默认开启，并对同一资产增加 in-flight 去重
   - `docs/changes/2026-09-20-standard-docker-default-local-asr-runtime.md`
@@ -201,6 +207,12 @@
 - 已放弃的多-agent 方案文档已经移除，不再作为当前开发模式的一部分
 
 ## 最近应优先关注的文档
+- `docs/changes/2026-09-25-openclaw-reference-forwarding-and-prompt-diagnostics.md`
+  - 恢复默认参考图转发；MCP 的 `prompt` 现映射到图像指令，运行日志确认原调用指令字段为空
+- `docs/changes/2026-09-25-openclaw-reference-image-prompt-only-policy.md`
+  - 已纠正的历史策略记录，不再作为当前默认行为或修复结论
+- `docs/changes/2026-09-24-openclaw-free-image-prompt-priority-fix.md`
+  - 修复 OpenClaw 自由生图把参考图主体错误置于用户明确 prompt 主体之上的问题，并记录品牌名注入边界与图像尺寸后续核对项
 - `docs/changes/2026-09-21-douyin-transcript-queue-and-startup-resume-fix.md`
   - 修复抖音视频文案提取“只能手动点、连续点多个会卡、服务重启后不自动续跑”的队列与启动恢复问题；当前手动入口、自动入队和启动恢复已统一到同一条串行队列
 - `docs/changes/2026-09-20-standard-docker-default-local-asr-runtime.md`

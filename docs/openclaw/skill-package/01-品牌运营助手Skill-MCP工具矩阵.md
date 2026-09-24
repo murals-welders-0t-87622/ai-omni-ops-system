@@ -518,6 +518,9 @@ RunningHub 上传节点补充规则：
 补充说明：
 
 - 图片模块默认走自由生图，不自动套社媒配图模板、不默认植入品牌资料，也不强制追加中文排版文案
+- `create_design_work.referenceImageMode` 默认是 `edit_reference`：提供的参考图会作为图像输入发送给生图模型
+- 用户明确要求完全忽略参考图、只按文字生成时，传 `referenceImageMode: "prompt_only"`
+- 图片主体与场景要求必须传入 `additionalInstruction`；兼容常见图像工具字段 `prompt`，旧字段 `styleHint` 也继续支持。不要只把生成要求写入任务标题或规格字段
 - 图片设计支持显式 `imageSize`，格式固定为 `宽x高`，例如 `1200x628`、`1080x1920`
 - 兼容旧链路的 `spec: "宽x高"` 仍可继续使用
 - 如果用户要用多元探索 `gpt-image-2.5-sunburst` 或 `gpt-image-2.5-flare`，不要手写 providerId，直接使用模型列表里返回的 `selectionKey`

@@ -481,7 +481,9 @@ RunningHub 关键规则：
 关键规则：
 
 - 指定模型前必须先读 options
-- 如果用户指定参考图，尽量带上参考图输入
+- 如果用户提供参考图，图片模块默认设为 `referenceImageMode: "edit_reference"`，参考图会发送给模型参与生成
+- 只有用户明确要求忽略参考图、完全按文字生成时，才设为 `referenceImageMode: "prompt_only"`
+- 主体、场景、风格等生成要求必须写入 `additionalInstruction`；也可使用兼容字段 `prompt`，旧字段 `styleHint` 仍可用
 - 如果用户明确指定图片尺寸，优先传 `imageSize: "宽x高"`，例如 `1200x628`
 - 兼容旧链路时也可以继续传 `spec: "宽x高"`
 - 如果用户明确指定多元探索 `gpt-image-2.5-sunburst` 或 `gpt-image-2.5-flare`，必须先从 `get_design_workspace_options` 返回的 `moduleOptions.image.models` 中读取对应 `selectionKey`

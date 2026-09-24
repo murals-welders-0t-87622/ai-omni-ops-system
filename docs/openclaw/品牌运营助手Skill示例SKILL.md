@@ -327,6 +327,9 @@
 - 如果用户提供了参考图：
   - 图片已有 URL 时优先传 `referenceImageUrl`
   - 图片在当前会话里时可直接传 `referenceImage.fileName / contentType / dataBase64`
+  - 提供参考图时默认传 `referenceImageMode: "edit_reference"`，让参考图参与生图
+  - 只有用户明确要求忽略参考图、完全按文字生成时，才传 `referenceImageMode: "prompt_only"`
+- 主体、场景和风格要求必须传入 `additionalInstruction`；`prompt` 是兼容别名，旧字段 `styleHint` 仍支持
 - 如果用户明确指定尺寸，优先传 `create_design_work.imageSize="宽x高"`，例如 `1200x628`
 - 兼容旧链路时，也可以继续传 `create_design_work.spec="宽x高"`
 - 如果用户要用多元探索 `gpt-image-2.5-sunburst` 或 `gpt-image-2.5-flare`，不要手写 providerId，直接使用模型列表里返回的 `selectionKey`

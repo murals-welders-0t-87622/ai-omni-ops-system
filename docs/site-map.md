@@ -321,8 +321,10 @@
   - 不默认植入品牌资料
   - 不强制生成中文排版文案
 - OpenClaw `create_design_work` 当前除 `referenceImageUrl` / 直接上传外，也支持 `referenceMaterialId`，可直接复用站内创作素材作为参考图
+- 图片模块提供参考图时默认 `referenceImageMode=edit_reference`，参考图会发送给生图模型；明确要求忽略参考图、只按文字生成时可传 `prompt_only`
 - 参考变更：`docs/changes/2026-08-21-openclaw-design-work-reference-material-id.md`
 - 参考变更：`docs/changes/2026-09-04-openclaw-free-image-design-workspace.md`
+- 参考变更：`docs/changes/2026-09-25-openclaw-reference-forwarding-and-prompt-diagnostics.md`
 
 ### 4.5A GEO获客工作台 `/geo`
 

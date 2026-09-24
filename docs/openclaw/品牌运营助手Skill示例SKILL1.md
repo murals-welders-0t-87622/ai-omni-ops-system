@@ -341,6 +341,9 @@
 - 如果用户提供了参考图：
   - 图片已有 URL 时优先传 `referenceImageUrl`
   - 图片在当前会话里时可直接传 `referenceImage.fileName / contentType / dataBase64`
+  - 提供参考图时默认传 `referenceImageMode: "edit_reference"`，让参考图参与生图
+  - 只有用户明确要求忽略参考图、完全按文字生成时，才传 `referenceImageMode: "prompt_only"`
+- 主体、场景和风格要求必须传入 `additionalInstruction`；`prompt` 是兼容别名，旧字段 `styleHint` 仍支持
 - 图片模块默认就是自由生图，不自动套社媒配图模板、不默认植入品牌资料，也不强制追加中文排版文案
 - `/more-features/design` 当前只是站内结果回看页，不再给用户手动创建任务，也不再暴露运营提示词中心或生图提示词中心
 - 如果用户说“用多元探索做图”，先检查多元探索平台 runtime 是否可用；确认可用后，仍然通过网站现有设计工作台工具链执行，不直接伪造一个不存在的多元探索专用设计工具

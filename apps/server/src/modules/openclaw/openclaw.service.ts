@@ -2185,7 +2185,7 @@ const OPENCLAW_MCP_TOOLS: OpenClawMcpToolDefinition[] = [
   },
   {
     name: "create_design_work",
-    description: "在网站设计工作台中直接创建一个设计任务。当前图片模块默认走 OpenClaw 自由生图模式：不会自动套社媒配图模板、不会默认植入品牌资料、也不会强制生成中文排版文案。支持纯文字需求，也支持补充参考图 URL 或参考图上传对象；图片设计可通过 imageSize 指定尺寸（格式 宽x高，如 1200x628）；如需指定生图模型，应先调用 get_design_workspace_options，再把返回的 selectionKey 传入 modelSelection。",
+    description: "在网站设计工作台中直接创建一个设计任务。当前图片模块默认走 OpenClaw 自由生图模式：不会自动套社媒配图模板、不会默认植入品牌资料、也不会强制生成中文排版文案。提供参考图时默认会将其作为图像输入提交给生图模型；只有用户明确要求完全忽略参考图、仅按文字生成时，才传 referenceImageMode=prompt_only。图片设计可通过 imageSize 指定尺寸（格式 宽x高，如 1200x628）；如需指定生图模型，应先调用 get_design_workspace_options，再把返回的 selectionKey 传入 modelSelection。",
     inputSchema: {
       type: "object",
       properties: {
@@ -2197,6 +2197,11 @@ const OPENCLAW_MCP_TOOLS: OpenClawMcpToolDefinition[] = [
         injectBrandProfile: { type: "boolean" },
         referenceImageUrl: { type: "string", description: "可选：已存在的参考图 URL，适合图片已在网站或公网可访问地址时使用。" },
         referenceMaterialId: { type: "string", description: "可选：站内 OpenClaw 创作素材 ID。适合直接复用已经归档到网站素材库的图片。"},
+        referenceImageMode: {
+          type: "string",
+          enum: ["edit_reference", "prompt_only"],
+          description: "图片模块可选，默认 edit_reference：提供的参考图会作为图像输入提交给生图模型；仅用户明确要求忽略参考图、完全按文字生成时设为 prompt_only。",
+        },
         referenceImage: {
           type: "object",
           description: "可选：直接上传参考图。可传 fileName、contentType、dataBase64。",
@@ -2211,7 +2216,8 @@ const OPENCLAW_MCP_TOOLS: OpenClawMcpToolDefinition[] = [
         modelSelection: { type: "string", description: "可选：使用 get_design_workspace_options 返回的模型 selectionKey，例如 providerId::modelName。" },
         imageSize: { type: "string", description: "可选：图片尺寸，格式为 宽x高，例如 1200x628、1080x1920。未指定时 image 模块默认使用 1242x1660。" },
         spec: { type: "string", description: "可选：兼容旧链路的规格字段；如果是图片设计，也可以继续传 宽x高，等价于 imageSize。" },
-        additionalInstruction: { type: "string", description: "可选：补充设计要求，适合填写完整的文案、风格、主体、版式和禁忌项。" },
+        additionalInstruction: { type: "string", description: "推荐：图片主体、场景、风格等完整生成要求。与 prompt 等价，优先使用此字段。" },
+        prompt: { type: "string", description: "兼容常见图像工具参数名；等同于 additionalInstruction，可填写主体、场景、风格等完整生成要求。" },
         styleHint: { type: "string", description: "可选：兼容旧写法，等同于 additionalInstruction。" },
       },
       required: ["module"],
@@ -7926,6 +7932,7 @@ export class OpenClawService {
       calendarItemId?: string;
       productId?: string;
       injectBrandProfile?: boolean;
+      referenceImageMode?: "prompt_only" | "edit_reference";
       referenceImage?: {
         fileName?: string;
         contentType?: string;
@@ -7946,11 +7953,16 @@ export class OpenClawService {
     await this.authService.assertBrandPermission(brandId, "personalCenter.works", "edit", auth);
 
     const module = this.normalizeDesignModule(options?.module) || "image";
+    const referenceImageMode = options?.referenceImageMode === "prompt_only" ? "prompt_only" : "edit_reference";
+    const shouldForwardReferenceImage = module !== "image" || referenceImageMode !== "prompt_only";
     const referenceMaterialId = String(options?.referenceMaterialId || "").trim();
     const explicitReferenceImageUrl = String(options?.referenceImageUrl || "").trim();
     const resolvedReferenceImageUrl = explicitReferenceImageUrl
-      || (referenceMaterialId ? (await this.getOpenClawCreativeMaterialFileUrl(brandId, referenceMaterialId) || "") : "");
-    if (referenceMaterialId && !options?.referenceImage?.dataBase64 && !resolvedReferenceImageUrl) {
+      || (referenceMaterialId && shouldForwardReferenceImage
+        ? (await this.getOpenClawCreativeMaterialFileUrl(brandId, referenceMaterialId) || "")
+        : "");
+    const hasReferenceImageInput = Boolean(options?.referenceImage?.dataBase64 || explicitReferenceImageUrl || referenceMaterialId);
+    if (referenceMaterialId && shouldForwardReferenceImage && !options?.referenceImage?.dataBase64 && !resolvedReferenceImageUrl) {
       throw new BadRequestException(`未找到可用的创作素材参考图：${referenceMaterialId}`);
     }
     const resolvedSpec = this.resolveCreateDesignWorkSpec(module, options);
@@ -7987,6 +7999,7 @@ export class OpenClawService {
         calendarItemId: String(options?.calendarItemId || "").trim() || undefined,
         productId: String(options?.productId || "").trim() || undefined,
         injectBrandProfile: typeof options?.injectBrandProfile === "boolean" ? options.injectBrandProfile : false,
+        referenceImageMode,
         referenceImage: options?.referenceImage?.dataBase64
           ? {
             fileName: String(options.referenceImage.fileName || "").trim() || "reference-image",
@@ -8036,11 +8049,15 @@ export class OpenClawService {
           module === "image"
             ? `品牌资料植入：${typeof options?.injectBrandProfile === "boolean" ? (options.injectBrandProfile ? "显式开启" : "关闭") : "默认关闭"}`
             : (options?.productId ? `产品：${options.productId}` : "产品：未指定"),
-          options?.referenceImage?.dataBase64
-            ? "参考图：已上传参考图"
-            : (explicitReferenceImageUrl
-              ? "参考图：已提供图片链接"
-              : (referenceMaterialId ? `参考图：已使用创作素材 ${referenceMaterialId}` : "参考图：未提供")),
+          ...(module === "image"
+            ? [
+                hasReferenceImageInput
+                  ? referenceImageMode === "edit_reference"
+                    ? "参考图：已作为图像输入提交，模型可能延续原图内容"
+                    : "参考图：已接收但未发送给模型，本次按文字生成"
+                  : "参考图：未提供",
+              ]
+            : []),
         ],
         data: result,
         links: [{ label: "打开设计工作台", url: "/more-features/design" }],
@@ -16008,7 +16025,18 @@ export class OpenClawService {
         return this.getRecentDesignWorks(headers, {
           limit: typeof toolArgs.limit === "number" ? toolArgs.limit : undefined,
         });
-      case "create_design_work":
+      case "create_design_work": {
+        const instructionCandidates = [
+          ["additionalInstruction", toolArgs.additionalInstruction],
+          ["prompt", toolArgs.prompt],
+          ["styleHint", toolArgs.styleHint],
+        ] as const;
+        const selectedInstruction = instructionCandidates.find(
+          ([, value]) => typeof value === "string" && value.trim().length > 0,
+        );
+        const selectedInstructionText = typeof selectedInstruction?.[1] === "string"
+          ? selectedInstruction[1]
+          : "";
         return this.createDesignWork(headers, {
           module: typeof toolArgs.module === "string" ? toolArgs.module : undefined,
           designType: typeof toolArgs.designType === "string" ? toolArgs.designType : undefined,
@@ -16016,6 +16044,7 @@ export class OpenClawService {
           calendarItemId: typeof toolArgs.calendarItemId === "string" ? toolArgs.calendarItemId : undefined,
           productId: typeof toolArgs.productId === "string" ? toolArgs.productId : undefined,
           injectBrandProfile: typeof toolArgs.injectBrandProfile === "boolean" ? toolArgs.injectBrandProfile : undefined,
+          referenceImageMode: toolArgs.referenceImageMode === "prompt_only" ? "prompt_only" : "edit_reference",
           referenceImage: toolArgs.referenceImage && typeof toolArgs.referenceImage === "object" && !Array.isArray(toolArgs.referenceImage)
             ? {
               fileName: typeof (toolArgs.referenceImage as Record<string, unknown>).fileName === "string"
@@ -16034,9 +16063,10 @@ export class OpenClawService {
           modelSelection: typeof toolArgs.modelSelection === "string" ? toolArgs.modelSelection : undefined,
           imageSize: typeof toolArgs.imageSize === "string" ? toolArgs.imageSize : undefined,
           spec: typeof toolArgs.spec === "string" ? toolArgs.spec : undefined,
-          additionalInstruction: typeof toolArgs.additionalInstruction === "string" ? toolArgs.additionalInstruction : undefined,
+          additionalInstruction: selectedInstructionText || undefined,
           styleHint: typeof toolArgs.styleHint === "string" ? toolArgs.styleHint : undefined,
         });
+      }
       case "get_douyin_original_copy_options":
         return this.getDouyinOriginalCopyOptions(headers);
       case "get_recent_douyin_original_copies":

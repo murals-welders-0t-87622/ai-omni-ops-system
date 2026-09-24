@@ -1120,6 +1120,7 @@ export type GenerateDesignWorkPayload = {
   designType?: string;
   referenceImage?: UploadFilePayload;
   referenceImageUrl?: string;
+  referenceImageMode?: "prompt_only" | "edit_reference";
   modelSelection?: string;
   spec?: string;
   additionalInstruction?: string;
@@ -4459,6 +4460,7 @@ export class WorksService implements OnModuleInit, OnModuleDestroy {
         injectBrandProfile: rawImageMode ? payload.injectBrandProfile === true : payload.injectBrandProfile !== false,
         referenceImageUrl: payload.referenceImageUrl || "",
         referenceImageSignature: this.buildReferenceImageSignature(payload.referenceImage),
+        referenceImageMode: payload.referenceImageMode || "edit_reference",
         modelSelection: payload.modelSelection || "",
         spec: payload.spec || "",
         additionalInstruction: payload.additionalInstruction || "",
@@ -4544,6 +4546,7 @@ export class WorksService implements OnModuleInit, OnModuleDestroy {
               skillSlug: skillProfile.skillSlug,
               ...designContext,
             });
+        const shouldSendReferenceImage = !rawImageMode || payload.referenceImageMode !== "prompt_only";
         const imageSizeOverride = this.resolveDesignImageGenerationSize(designContext.spec);
         const imageAsset = await this.generateImageAsset({
           brandId,
@@ -4557,8 +4560,8 @@ export class WorksService implements OnModuleInit, OnModuleDestroy {
             ? "你是一名通用图像生成助手，按用户当前要求直接出图，不要额外植入海报文案、社媒版式、营销标签或无关业务信息。"
             : `你是一名商业设计视觉生成助手，需要产出可直接用于营销和品牌传播的高完成度设计图，当前设计技能为：${skillProfile.label}。`,
           prompt: imagePrompt,
-          referenceImageUrls: payload.referenceImageUrl ? [payload.referenceImageUrl] : [],
-          referenceImagePayloads: payload.referenceImage ? [payload.referenceImage] : [],
+          referenceImageUrls: shouldSendReferenceImage && payload.referenceImageUrl ? [payload.referenceImageUrl] : [],
+          referenceImagePayloads: shouldSendReferenceImage && payload.referenceImage ? [payload.referenceImage] : [],
           promptMode: rawImageMode ? "free_image" : "social_graphic",
           imageSizeOverride,
           includeFallbackPrompt: true,
@@ -6983,7 +6986,9 @@ export class WorksService implements OnModuleInit, OnModuleDestroy {
     brandProfileSummary?: string;
   }) {
     return [
-      `请直接为“${params.brandName}”生成一张${params.designType || "图片"}。`,
+      params.brandProfileSummary
+        ? `请结合品牌“${params.brandName}”的资料生成一张${params.designType || "图片"}。`
+        : `请根据用户当前要求直接生成一张${params.designType || "图片"}。`,
       params.spec ? `尺寸或规格要求：${params.spec}。` : "",
       params.additionalInstruction ? `用户补充要求：${params.additionalInstruction}。` : "",
       params.brandProfileSummary ? `仅当用户明确要求结合品牌资料时，再参考以下品牌信息：${params.brandProfileSummary}。` : "",
@@ -13721,6 +13726,7 @@ export class WorksService implements OnModuleInit, OnModuleDestroy {
         injectBrandProfile: payload.injectBrandProfile !== false,
         referenceImageUrl: payload.referenceImageUrl || "",
         referenceImageSignature: this.buildReferenceImageSignature(payload.referenceImage),
+        referenceImageMode: payload.referenceImageMode || "edit_reference",
         modelSelection: payload.modelSelection || "",
         resolvedModelName: modelName || "",
         spec: payload.spec || "",
@@ -30516,7 +30522,7 @@ export class WorksService implements OnModuleInit, OnModuleDestroy {
         "",
         "补充强制要求：这是一次自由生图任务，不要默认生成社媒排版图、信息海报、公众号配图、电商主视觉或任何带文字模板的成品。",
         "如果输入里没有明确要求文字、标题、标签、按钮或版式元素，就不要自行在画面中添加任何文字。",
-        "如果输入中带有参考图，优先继承主体特征、构图、视角、光线、材质与整体风格，不要只保留泛化氛围。",
+        "如果用户文字明确指定了与参考图不同的主体或场景，必须以用户文字要求为准；参考图只用于参考构图、视角、光线、材质与整体风格，不得保留或带入参考图原主体。只有用户明确要求保留参考图主体时，才继承其主体特征。",
         "优先保证主体质量、细节完整度、空间关系、色彩控制和构图稳定性，不要额外植入营销信息。",
       ]
         .filter(Boolean)

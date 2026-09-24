@@ -234,6 +234,8 @@ OpenClaw 通过 MCP 获取：
 
 - `create_design_work` 在图片模块下默认就是给 OpenClaw 直接调用生图模型自由出图
 - 系统平台不再强制植入社媒配图模板、品牌资料或中文排版文案
+- 图片模块默认 `referenceImageMode="edit_reference"`：提供的参考图会作为图像输入提交给模型；只有用户明确要求忽略参考图、完全按文字生成时才传 `prompt_only`
+- 图片生成要求使用 `additionalInstruction` 字段；MCP 同时兼容常见字段名 `prompt` 与旧字段 `styleHint`
 - `/more-features/design` 当前只是站内结果承接页，不再给用户手动操作设计任务
 
 ### 4.3 抖音数字人语音能力在 OpenClaw 中的推荐语义

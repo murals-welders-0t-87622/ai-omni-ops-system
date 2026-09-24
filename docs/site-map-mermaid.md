@@ -230,7 +230,7 @@ flowchart TD
     G --> G1["当前仅承接 OpenClaw 自由生图结果回看"]
     G --> G2["用户侧不再暴露手动创建入口、运营提示词中心、生图提示词中心"]
     G --> G3["OpenClaw create_design_work 图片模块默认自由生图，不自动套社媒模板或品牌资料"]
-    G --> G4["仍支持 referenceMaterialId 复用站内创作素材参考图"]
+    G --> G4["referenceMaterialId 可复用站内素材；提供参考图时默认 edit_reference 并向模型传图，prompt_only 用于明确忽略参考图"]
     E --> H
     F --> H
     G --> H
